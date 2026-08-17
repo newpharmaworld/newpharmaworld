@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    function isValidEnquiry() {
+      let data = request.resource.data;
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+          && data.phone is string && data.phone.size() >= 7 && data.phone.size() <= 20
+          && data.message is string && data.message.size() > 0 && data.message.size() <= 2000
+          && (!('email' in data) || data.email is string);
+    }
+
+    // Public readable catalogue data
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /specialities/{specialityId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /brands/{brandId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /homepage/{document=**} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /siteSettings/{document=**} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Enquiries: Public can CREATE only, Admin can READ / UPDATE / DELETE
+    match /enquiries/{enquiryId} {
+      allow create: if isValidEnquiry();
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}
